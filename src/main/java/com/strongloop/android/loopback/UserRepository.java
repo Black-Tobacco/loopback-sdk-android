@@ -225,8 +225,51 @@ public class UserRepository<U extends User> extends ModelRepository<U> {
             final LoginCallback<U> callback) {
 
         HashMap<String, Object> params = new HashMap<String, Object>();
+        params.put("email", email);
+        params.put("password",  password);
+
+        invokeStaticMethod("login", params,
+                new Adapter.JsonObjectCallback() {
+
+                    @Override
+                    public void onError(Throwable t) {
+                        callback.onError(t);
+                    }
+
+                    @Override
+                    public void onSuccess(JSONObject response) {
+                        AccessToken token = getAccessTokenRepository()
+                                .createObject(JsonUtil.fromJson(response));
+                        getRestAdapter().setAccessToken(token.getId().toString());
+
+                        JSONObject userJson = response.optJSONObject("user");
+                        U user = userJson != null
+                                ? createObject(JsonUtil.fromJson(userJson))
+                                : null;
+
+                        setCurrentUserId(token.getUserId());
+                        cachedCurrentUser = user;
+                        callback.onSuccess(token, user);
+                    }
+                });
+    }
+
+    /**
+     * Login a user given an email and password.
+     * Creates a {@link AccessToken} and {@code U} user models if successful.
+     * @param email - user email
+     * @param password - user password
+     * @param parameters - optional parameters
+     * @param callback - success/error callback
+     */
+    public void loginUser(String email, String password,
+                          Map<String, ? extends Object> parameters,
+                          final LoginCallback<U> callback) {
+
+        HashMap<String, Object> params = new HashMap<String, Object>();
         params.put("email",  email);
         params.put("password",  password);
+        params.putAll(parameters);
 
         invokeStaticMethod("login", params,
                 new Adapter.JsonObjectCallback() {
