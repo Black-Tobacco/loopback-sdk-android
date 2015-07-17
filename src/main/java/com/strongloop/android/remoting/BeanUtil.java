@@ -16,7 +16,7 @@ public class BeanUtil {
         }
 
         Class<?> objectClass = object.getClass();
-
+        Method[] methods = includeSuperClasses ? objectClass.getMethods() : objectClass.getDeclaredMethods();
         for (Map.Entry<String, ? extends Object> entry : properties.entrySet()) {
             String key = entry.getKey();
             Object value = entry.getValue();
@@ -40,7 +40,6 @@ public class BeanUtil {
 
             // Find a more generic setter
             if (setter == null) {
-                Method[] methods = includeSuperClasses ? objectClass.getMethods() : objectClass.getDeclaredMethods();
                 for (Method method : methods) {
                     if (method.getName().equals(setterName)) {
                         Class<?>[] parameterTypes = method.getParameterTypes();
